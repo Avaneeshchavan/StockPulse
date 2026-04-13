@@ -245,16 +245,11 @@ export default function TradePanel({
   /* ── Submit (Optimistic Update via React Query) ─────────────────── */
   const tradeMutation = useMutation({
     mutationFn: async ({ type, symbol, quantity, price, companyName, assetType, notes }) => {
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log('Session:', session?.user?.id)
       console.log('Sending trade:', { symbol, quantity: Number(quantity), price: Number(price) })
       
-      const res = await fetch(apiUrl(`/trade/${type}`), {
+      const res = await fetchWithAuth(apiUrl(`/trade/${type}`), {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol, quantity, price, notes, companyName, assetType })
       })
       

@@ -13,6 +13,7 @@ import WatchlistToggle from '../components/WatchlistToggle.jsx'
 import HeatMap, { HEATMAP_SYMBOLS } from '../components/HeatMap.jsx'
 import { supabase } from '../lib/supabase.js'
 import { apiUrl } from '../config'
+import { fetchWithAuth } from '../lib/api.js'
 import {
   ASSET_GROUPS,
   INDEX_SYMBOLS,
@@ -340,7 +341,7 @@ function QuickTrade({ currentSymbols, activeTab, currentAssets, marketData, isMa
     }
     setSubmitting(true)
     try {
-      const res = await fetch(apiUrl('/trade'), {
+      const res = await fetchWithAuth(apiUrl('/trade'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol: symbol.toUpperCase(), quantity: Number(qty), side }),
