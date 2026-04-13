@@ -6,6 +6,7 @@ export const API_BASE = String(rawBase).replace(/\/$/, '')
 
 export function apiUrl(path) {
   const normalized = path.startsWith('/') ? path : `/${path}`
+
   const withApiPrefix = normalized.startsWith('/api')
     ? normalized
     : `/api${normalized}`
