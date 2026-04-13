@@ -5,8 +5,14 @@ const rawBase = import.meta.env.VITE_API_BASE_URL ?? ''
 export const API_BASE = String(rawBase).replace(/\/$/, '')
 
 export function apiUrl(path) {
-  const p = path.startsWith('/') ? path : `/${path}`
-  return API_BASE ? `${API_BASE}${p}` : p
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  const withApiPrefix = normalized.startsWith('/api')
+    ? normalized
+    : `/api${normalized}`
+
+  return API_BASE
+    ? `${API_BASE}${withApiPrefix}`
+    : withApiPrefix
 }
 
 /**
