@@ -1,7 +1,5 @@
 {
-  "framework": "vite"
-}
-{
+  "framework": "vite",
   "rewrites": [
     {
       "source": "/(.*)",
