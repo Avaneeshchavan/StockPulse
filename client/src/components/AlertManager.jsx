@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { apiUrl } from '../config'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useToast } from './ui/Toast.jsx'
@@ -32,7 +33,9 @@ export default function AlertManager() {
 
         // 2. Fetch current prices for these symbols
         const symbols = [...new Set(alerts.map(a => a.symbol))]
-        const res = await fetch(`/api/market/quotes/batch?symbols=${symbols.join(',')}`)
+        const res = await fetch(
+  apiUrl(`/market/quotes/batch?symbols=${symbols.join(',')}`)
+)
         if (!res.ok) return
         const quotes = await res.json()
 
