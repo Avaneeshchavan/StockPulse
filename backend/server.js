@@ -10,10 +10,13 @@ import portfolioRouter from './src/routes/portfolioRouter.js';
 import watchlistRouter from './src/routes/watchlistRouter.js';
 import marketRouter from './src/routes/marketRouter.js';
 import leaderboardRouter from './src/routes/leaderboardRouter.js';
+import dashboardRouter from './src/routes/dashboardRouter.js';
 import cors from 'cors';
+import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { requireAuth } from './src/middleware/auth.js';
 import { createUserSupabase } from './src/lib/supabaseUser.js';
+import { startPriceCache } from './src/services/priceCache.js';
 
 // Global error handlers
 process.on('unhandledRejection', (reason, promise) => {
@@ -29,6 +32,7 @@ process.on('uncaughtException', (err) => {
 const app = express();
  
 // Middleware
+app.use(compression());
 app.use(express.json());
 app.use(cors({
     origin: [
@@ -41,6 +45,7 @@ app.use(cors({
 
 // Routes
 app.use('/api/news', newsRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 const apiLimiter = rateLimit({ windowMs: 60000, max: 100 });
 app.use('/api/market', apiLimiter, marketRouter);
@@ -91,35 +96,86 @@ app.use((err, req, res, next) => {
 
 const server = app.listen(config.port, () => {
     console.log(`Server running on port: ${config.port}`);
+    // Start background price cache — pre-warms quotes so user requests always hit warm cache
+    startPriceCache();
 });
 
 const wss = new WebSocketServer({ server });
-// Finnhub WS
+
+// ── Pooled Finnhub WebSocket ────────────────────────────────────────────────
+// One shared upstream connection; broadcasts to all interested clients.
 const FINNHUB_URL = `wss://ws.finnhub.io?token=${config.finnhubApiKey}`;
+let finnhubWS = null;
+const symbolClients = new Map(); // symbol → Set<client>
+
+function ensureFinnhub() {
+  if (finnhubWS && finnhubWS.readyState === WebSocket.OPEN) return;
+
+  finnhubWS = new WebSocket(FINNHUB_URL);
+
+  finnhubWS.on('open', () => {
+    console.log('[WS] Finnhub upstream connected');
+    // Re-subscribe all active symbols
+    for (const sym of symbolClients.keys()) {
+      finnhubWS.send(JSON.stringify({ type: 'subscribe', symbol: sym }));
+    }
+  });
+
+  finnhubWS.on('message', (raw) => {
+    const msg = raw.toString();
+    // Broadcast to ALL connected clients (they filter client-side)
+    for (const client of wss.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(msg);
+      }
+    }
+  });
+
+  finnhubWS.on('close', () => {
+    console.log('[WS] Finnhub upstream disconnected, reconnecting in 3s...');
+    setTimeout(ensureFinnhub, 3000);
+  });
+
+  finnhubWS.on('error', (err) => {
+    console.error('[WS] Finnhub error:', err.message);
+  });
+}
 
 wss.on("connection", (client) => {
-    console.log("Frontend connected");
+  console.log("[WS] Frontend client connected");
 
-    let finnhubWS;
+  client.on("message", (msg) => {
+    try {
+      const { symbol } = JSON.parse(msg);
+      if (!symbol) return;
 
-    client.on("message", (msg) => {
-        const { symbol } = JSON.parse(msg);
+      // Track this client's interest
+      if (!symbolClients.has(symbol)) {
+        symbolClients.set(symbol, new Set());
+      }
+      symbolClients.get(symbol).add(client);
 
-        finnhubWS = new WebSocket(FINNHUB_URL);
+      // Ensure upstream is open and subscribe
+      ensureFinnhub();
+      if (finnhubWS && finnhubWS.readyState === WebSocket.OPEN) {
+        finnhubWS.send(JSON.stringify({ type: 'subscribe', symbol }));
+      }
+    } catch (e) {
+      console.error('[WS] Bad client message:', e.message);
+    }
+  });
 
-        finnhubWS.on("open", () => {
-            finnhubWS.send(JSON.stringify({
-                type: "subscribe",
-                symbol
-            }));
-        });
-
-        finnhubWS.on("message", (data) => {
-            client.send(data.toString());
-        });
-    });
-
-    client.on("close", () => {
-        if (finnhubWS) finnhubWS.close();
-    });
-});
+  client.on("close", () => {
+    // Remove this client from all symbol subscriptions
+    for (const [sym, clients] of symbolClients.entries()) {
+      clients.delete(client);
+      // If no clients left for this symbol, unsubscribe upstream
+      if (clients.size === 0) {
+        symbolClients.delete(sym);
+        if (finnhubWS && finnhubWS.readyState === WebSocket.OPEN) {
+          finnhubWS.send(JSON.stringify({ type: 'unsubscribe', symbol: sym }));
+        }
+      }
+    }
+  });
+});

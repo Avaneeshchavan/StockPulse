@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.js'
-import { useMarketQuotes, useNewsHeadlines } from '../hooks/useMarketData.js'
+import { useDashboardData, useMarketQuotes } from '../hooks/useMarketData.js'
 import Button from '../components/ui/Button.jsx'
 import LeaderboardTable from '../components/LeaderboardTable.jsx'
 import LeaderboardPreview from '../components/LeaderboardPreview.jsx'
@@ -412,9 +412,8 @@ function FeatureCards() {
 /* ─────────────────────────────────────────────────────────────────────────────
    Top Movers
    ───────────────────────────────────────────────────────────────────────────── */
-function TopMovers() {
+function TopMovers({ quotes, loading }) {
   const navigate = useNavigate()
-  const { quotes, loading } = useMarketQuotes(MOVERS_SYMBOLS)
 
   const ranked = useMemo(() => {
     const arr = MOVERS_SYMBOLS.map(sym => ({
@@ -488,8 +487,7 @@ function TopMovers() {
 /* ─────────────────────────────────────────────────────────────────────────────
    Latest News
    ───────────────────────────────────────────────────────────────────────────── */
-function MarketNews() {
-  const { news, loading } = useNewsHeadlines(6)
+function MarketNews({ news, loading }) {
 
   return (
     <div style={{ padding: '0 16px 40px', display: 'flex', justifyContent: 'center' }}>
@@ -597,8 +595,7 @@ function MarketMoodIndicator({ quotes }) {
 /* ─────────────────────────────────────────────────────────────────────────────
    Quick Stats Bar
    ───────────────────────────────────────────────────────────────────────────── */
-function QuickStatsBar() {
-  const { quotes, loading } = useMarketQuotes(STAT_SYMBOLS)
+function QuickStatsBar({ quotes, loading }) {
 
   const stats = [
     { label: 'S&P 500', sym: 'SPY' },
@@ -709,9 +706,8 @@ function HowItWorks() {
 /* ─────────────────────────────────────────────────────────────────────────────
    Featured Stocks Strip
    ───────────────────────────────────────────────────────────────────────────── */
-function FeaturedStocksStrip() {
+function FeaturedStocksStrip({ quotes, loading }) {
   const navigate = useNavigate()
-  const { quotes, loading } = useMarketQuotes(FEATURED_SYMBOLS)
 
   return (
     <div style={{ padding: '40px 16px 20px', display: 'flex', justifyContent: 'center' }}>
@@ -841,7 +837,8 @@ export default function HomePage() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
 
-  const { quotes: moodQuotes } = useMarketQuotes(MOOD_SYMBOLS)
+  // Single aggregated call replaces 5 separate API requests
+  const { quotes: moodQuotes, news, loading: dashLoading } = useDashboardData(30_000)
 
   return (
     <div style={{ background: 'var(--tv-bg-primary)', overflowY: 'auto', height: '100%' }}>
@@ -966,23 +963,23 @@ export default function HomePage() {
         </div>
       </div>
 
-      <QuickStatsBar />
+      <QuickStatsBar quotes={moodQuotes} loading={dashLoading} />
 
       <HowItWorks />
 
-      <FeaturedStocksStrip />
+      <FeaturedStocksStrip quotes={moodQuotes} loading={dashLoading} />
 
       <TrendingSearches />
 
       <AssetClassPerformance quotes={moodQuotes} />
 
       {/* SECTION 4: TOP MOVERS */}
-      <TopMovers />
+      <TopMovers quotes={moodQuotes} loading={dashLoading} />
 
       <RecentActivity />
 
       {/* SECTION 5: LATEST NEWS */}
-      <MarketNews />
+      <MarketNews news={news.slice(0, 6)} loading={dashLoading} />
 
       {/* SECTION 6: LEADERBOARD PREVIEW */}
       <div style={{ padding: '0 16px 60px', display: 'flex', justifyContent: 'center' }}>

@@ -164,7 +164,10 @@ function UserDropdown({ user, logout }) {
       }
       return data
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   return (
@@ -425,7 +428,10 @@ function AlertBadge({ userId }) {
       }
       return count || 0
     },
-    refetchInterval: 60000 // refresh every 60s
+    refetchInterval: 60000,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   if (count === 0) return null
@@ -465,7 +471,10 @@ function WatchlistNavBadge({ userId }) {
       return count || 0
     },
     enabled: !!userId,
-    refetchInterval: 60000
+    refetchInterval: 60000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   if (!userId || count === 0) return null

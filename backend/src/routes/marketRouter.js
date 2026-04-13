@@ -44,7 +44,7 @@ router.get('/quote/:symbol', async (req, res) => {
       changePercent: q.dp,  // change percent
       timestamp: q.t,
     };
-    cacheUtil.set(cacheKey, result, 20);
+    cacheUtil.set(cacheKey, result, 30);
     res.json(result);
   } catch (err) {
     console.error('Market quote error:', err.message);
@@ -74,7 +74,7 @@ router.get('/profile/:symbol', async (req, res) => {
   }
 });
 
-// GET /api/market/quotes/batch?symbols=AAPL,MSFT,...
+// GET /api/market/quotes/batch?symbols=AAPL,MSFT,...&sparkline=true (optional)
 router.get('/quotes/batch', async (req, res) => {
   try {
     if (!req.query.symbols) {
@@ -86,20 +86,22 @@ router.get('/quotes/batch', async (req, res) => {
       .map((s) => s.trim().toUpperCase())
       .filter(Boolean);
 
+    const wantSparkline = req.query.sparkline === 'true';
+
     // getQuotes internally checks cache first for each symbol, 
     // only fetches uncached ones, and returns an array of formatted quotes
     const quotes = await getQuotes(symbols);
     
-    // Enrich with sparkline data in parallel
-    const enrichedData = await Promise.all(
-      quotes.map(async (q) => {
-        const sparklineData = await getSparklineData(q.symbol);
-        return {
-          ...q,
-          sparklineData
-        };
-      })
-    );
+    // Only fetch sparklines if explicitly requested (they block for 1-5s)
+    let enrichedData = quotes;
+    if (wantSparkline) {
+      enrichedData = await Promise.all(
+        quotes.map(async (q) => {
+          const sparklineData = await getSparklineData(q.symbol);
+          return { ...q, sparklineData };
+        })
+      );
+    }
 
     const responseObj = {};
     for (const q of enrichedData) {
@@ -107,7 +109,9 @@ router.get('/quotes/batch', async (req, res) => {
         responseObj[q.symbol] = q;
       }
     }
-    
+
+    // Cache-Control for browser-level caching (15s)
+    res.set('Cache-Control', 'public, max-age=15');
     res.json(responseObj);
   } catch (err) {
     console.error('Batch quotes error:', err.message);

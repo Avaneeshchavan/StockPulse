@@ -51,7 +51,7 @@ export async function getQuotes(symbols) {
         .get(`https://finnhub.io/api/v1/quote?symbol=${fetchSymbol}&token=${API_KEY}`))
         .then((r) => {
           if (r && r.data) {
-            cacheUtil.set(cacheKey, r.data, 20);
+            cacheUtil.set(cacheKey, r.data, 30);
             return { symbol: origSymbol, data: r.data };
           }
           return { symbol: origSymbol, data: null };
