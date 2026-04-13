@@ -8,6 +8,7 @@ import { ACHIEVEMENTS } from '../data/achievements.js'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { fetchWithAuth } from '../lib/api.js'
+import { apiUrl } from '../config'
 import { useToast } from '../components/ui/Toast.jsx'
 import StatCard from '../components/ui/StatCard.jsx'
 import DataTable from '../components/ui/DataTable.jsx'
@@ -943,7 +944,7 @@ export default function PortfolioPage() {
   const fetchHoldings = useCallback(async () => {
     if (!user?.id) return
     try {
-      const res = await fetchWithAuth('/api/portfolio')
+      const res = await fetchWithAuth(apiUrl('/portfolio'))
       if (!res.ok) {
         let errMsg = `HTTP ${res.status}`
         try {
@@ -977,7 +978,7 @@ export default function PortfolioPage() {
   const fetchTransactions = useCallback(async () => {
     if (!user?.id) return
     try {
-      const res = await fetchWithAuth('/api/portfolio/transactions?limit=100')
+      const res = await fetchWithAuth(apiUrl('/portfolio/transactions?limit=100'))
       if (!res.ok) {
         let errMsg = `HTTP ${res.status}`
         try {

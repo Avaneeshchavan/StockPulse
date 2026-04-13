@@ -9,6 +9,7 @@ import PriceChange from '../components/ui/PriceChange.jsx'
 import WatchlistToggle from '../components/WatchlistToggle.jsx'
 import { STATIC_STOCK } from '../constants/stocks'
 import { fmtPrice } from '../constants/marketData.js'
+import { apiUrl } from '../config'
 
 export default function WatchlistPage() {
   const { user } = useAuth()
@@ -45,7 +46,7 @@ export default function WatchlistPage() {
     queryKey: ['watchlistQuotes', symbols],
     queryFn: async () => {
       if (symbols.length === 0) return {}
-      const res = await fetch(`/api/market/quotes/batch?symbols=${symbols.join(',')}`)
+      const res = await fetch(apiUrl(`/market/quotes/batch?symbols=${symbols.join(',')}`))
       if (!res.ok) throw new Error('Failed to fetch quotes')
       return res.json()
     },

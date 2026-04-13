@@ -61,7 +61,7 @@ export async function fetchStockQuotes(symbols) {
     const batches = chunkArray(symbols, 10)
     const results = await Promise.all(
       batches.map((batch) =>
-        fetch(apiUrl(`/api/stocks/?symbols=${batch.join(',')}`)).then((r) => {
+        fetch(apiUrl(`/stocks/?symbols=${batch.join(',')}`)).then((r) => {
           if (!r.ok) throw new Error('quote fetch failed')
           return r.json()
         }).catch((error) => {

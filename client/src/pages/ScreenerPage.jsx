@@ -7,6 +7,7 @@ import PriceChange from '../components/ui/PriceChange.jsx'
 import Button from '../components/ui/Button.jsx'
 import { useToast } from '../components/ui/Toast.jsx'
 import { useAuth } from '../hooks/useAuth.js'
+import { apiUrl } from '../config'
 
 /* ── Helpers ───────────────────────────────────────────────────────────────── */
 function fmt(n) {
@@ -280,7 +281,7 @@ function ScreenerTable({ rows, loading }) {
     }
     
     try {
-      const res = await fetch('/api/watchlist', {
+      const res = await fetch(apiUrl('/watchlist'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol }),

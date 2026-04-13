@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import Button from '../components/ui/Button'
 import LoadingSkeleton from '../components/ui/LoadingSkeleton'
+import { apiUrl } from '../config'
 
 /* ── Constants ───────────────────────────────────────────────────── */
 const COLORS = ['#00d4aa', '#f85149', '#d29922', '#7c3aed']
@@ -27,7 +28,7 @@ const RANGES = [
 const fetchCandles = async (symbol, days) => {
   const now = Math.floor(Date.now() / 1000)
   const from = now - days * 86_400
-  const res = await fetch(`/api/market/candles?symbol=${symbol}&resolution=D&from=${from}&to=${now}`)
+  const res = await fetch(apiUrl(`/market/candles?symbol=${symbol}&resolution=D&from=${from}&to=${now}`))
   if (!res.ok) throw new Error(`Failed to fetch ${symbol}`)
   const data = await res.json()
   return data.candles || []
@@ -63,7 +64,7 @@ export default function ComparePage() {
     }
     setIsSearching(true)
     try {
-      const res = await fetch(`/api/market/search?q=${encodeURIComponent(query)}`)
+      const res = await fetch(apiUrl(`/market/search?q=${encodeURIComponent(query)}`))
       const data = await res.json()
       // API directly returns array or { data: [...] } / { result: [...] }
       setSearchResults(Array.isArray(data) ? data : (data.data || data.result || []))

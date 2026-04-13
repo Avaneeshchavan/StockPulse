@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { apiUrl } from '../config'
 
 /* ─── constants ──────────────────────────────────────────────────── */
 const POPULAR = [
@@ -153,7 +154,7 @@ export default function SearchOverlay({ open, onClose }) {
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/market/search?q=${encodeURIComponent(trimmed)}`)
+        const res = await fetch(apiUrl(`/market/search?q=${encodeURIComponent(trimmed)}`))
         if (res.ok) {
           const data = await res.json()
           // API returns array of { symbol, description, type, exchange }

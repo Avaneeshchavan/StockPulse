@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useToast } from './ui/Toast.jsx'
 import { fetchWithAuth } from '../lib/api.js'
+import { apiUrl } from '../config'
 import Button from './ui/Button.jsx'
 import PriceChange from './ui/PriceChange.jsx'
 import LoadingSkeleton from './ui/LoadingSkeleton.jsx'
@@ -248,7 +249,7 @@ export default function TradePanel({
       console.log('Session:', session?.user?.id)
       console.log('Sending trade:', { symbol, quantity: Number(quantity), price: Number(price) })
       
-      const res = await fetch(`/api/trade/${type}`, {
+      const res = await fetch(apiUrl(`/trade/${type}`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

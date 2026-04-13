@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { timeAgo } from '../constants/marketData.js'
+import { apiUrl } from '../config'
 import LoadingSkeleton from '../components/ui/LoadingSkeleton.jsx'
 
 /* ─── constants ──────────────────────────────────────────────────── */
@@ -332,7 +333,7 @@ export default function NewsPage() {
     ;(async () => {
       setLoading(true)
       try {
-        const res  = await fetch('/api/news')
+        const res  = await fetch(apiUrl('/news'))
         const data = await res.json()
         if (cancelled) return
 

@@ -19,6 +19,7 @@ import {
   HistogramSeries,
 } from 'lightweight-charts'
 import { useQuery } from '@tanstack/react-query'
+import { apiUrl } from '../config'
 import LoadingSkeleton from './ui/LoadingSkeleton.jsx'
 
 /* ─────────────────────────────────────────────────────────────────
@@ -259,7 +260,7 @@ export default function StockChart({ symbol, height = 400, price, change, change
     queryFn: async () => {
       const now    = Math.floor(Date.now() / 1000)
       const from   = now - range.days * 86_400
-      const url    = `/api/market/candles?symbol=${symbol}&resolution=${range.resolution}&from=${from}&to=${now}`
+      const url    = apiUrl(`/market/candles?symbol=${symbol}&resolution=${range.resolution}&from=${from}&to=${now}`)
       const res    = await fetch(url)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const { candles: data } = await res.json()

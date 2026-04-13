@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { apiUrl } from '../config'
 
 /**
  * useMarketQuotes
@@ -13,7 +14,7 @@ export function useMarketQuotes(symbols, refreshMs = null) {
     queryKey: ['quotes', symKey],
     queryFn: async () => {
       if (!symKey) return {}
-      const res = await fetch(`/api/market/quotes/batch?symbols=${symKey}`)
+      const res = await fetch(apiUrl(`/market/quotes/batch?symbols=${symKey}`))
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       return res.json()
     },
@@ -38,7 +39,7 @@ export function useNewsHeadlines(limit = 20) {
   const { data, isLoading } = useQuery({
     queryKey: ['news', limit],
     queryFn: async () => {
-      const res = await fetch('/api/news')
+      const res = await fetch(apiUrl('/news'))
       if (!res.ok) throw new Error('Failed to fetch news')
       const json = await res.json()
       const articles = Array.isArray(json) ? json : (json.articles ?? [])

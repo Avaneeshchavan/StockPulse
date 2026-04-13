@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { ASSET_GROUPS } from '../constants/marketData.js'
 import { STATIC_STOCK } from '../constants/stocks'
 import { fetchWithAuth } from '../lib/api.js'
+import { apiUrl } from '../config'
 import { supabase } from '../lib/supabase.js'
 import { PEER_MAP } from '../constants/marketData.js'
 import Button from '../components/ui/Button'
@@ -57,7 +58,7 @@ export default function StockDetailPage() {
   /* ── Price state via React Query ─────────────────────────────────── */
   const { data: q, isLoading: quoteLoading } = useQuery({
     queryKey: ['quote', symbol],
-    queryFn: () => fetch(`/api/market/quotes/batch?symbols=${symbol}`).then(r => r.json()).then(d => d[symbol] || {})
+    queryFn: () => fetch(apiUrl(`/market/quotes/batch?symbols=${symbol}`)).then(r => r.json()).then(d => d[symbol] || {})
   })
 
   const price     = q?.price ?? staticRow?.price ?? null

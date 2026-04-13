@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchWithAuth } from '../lib/api.js'
+import { apiUrl } from '../config'
 
 export default function TransactionHistoryPage() {
   const [filterType, setFilterType] = useState('all')
@@ -20,7 +21,7 @@ export default function TransactionHistoryPage() {
       setError(null)
       try {
         // Fetch up to 10000 for robust client-side filtering and CSV export
-        const res = await fetchWithAuth('/api/portfolio/transactions?limit=10000&page=1')
+        const res = await fetchWithAuth(apiUrl('/portfolio/transactions?limit=10000&page=1'))
         const json = await res.json().catch((err) => { console.error(err); return {} })
         if (!res.ok) throw new Error(json.error || res.statusText)
         if (!cancelled) {

@@ -12,6 +12,7 @@ import LeaderboardTable from '../components/LeaderboardTable.jsx'
 import WatchlistToggle from '../components/WatchlistToggle.jsx'
 import HeatMap, { HEATMAP_SYMBOLS } from '../components/HeatMap.jsx'
 import { supabase } from '../lib/supabase.js'
+import { apiUrl } from '../config'
 import {
   ASSET_GROUPS,
   INDEX_SYMBOLS,
@@ -339,7 +340,7 @@ function QuickTrade({ currentSymbols, activeTab, currentAssets, marketData, isMa
     }
     setSubmitting(true)
     try {
-      const res = await fetch('/api/trade', {
+      const res = await fetch(apiUrl('/trade'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol: symbol.toUpperCase(), quantity: Number(qty), side }),
