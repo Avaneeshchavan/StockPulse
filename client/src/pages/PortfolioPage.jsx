@@ -944,7 +944,7 @@ export default function PortfolioPage() {
   const fetchHoldings = useCallback(async () => {
     if (!user?.id) return
     try {
-      const res = await fetchWithAuth(apiUrl('/portfolio'))
+      const res = await fetchWithAuth(apiUrl('/portfolio/summary'))
       if (!res.ok) {
         let errMsg = `HTTP ${res.status}`
         try {
@@ -959,7 +959,7 @@ export default function PortfolioPage() {
       const body = await res.json()
       if (body.success) {
         // Map backend fields to frontend expected fields
-        const formattedData = body.data.map(h => ({
+        const formattedData = body.data.portfolio.map(h => ({
           ...h,
           avg_buy_price: h.average_price, // backend uses 'average_price'
           created_at: h.updated_at,       // backend uses 'updated_at'
