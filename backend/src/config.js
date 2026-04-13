@@ -61,7 +61,10 @@ const gnewsApiKey = requireNonEmpty(
   'GNEWS_API_KEY',
   process.env.GNEWS_API_KEY
 )
-const port = requirePort('PORT', process.env.PORT)
+const port =
+  process.env.PORT && process.env.NODE_ENV === 'production'
+    ? requirePort('PORT', process.env.PORT)
+    : Number(process.env.PORT || 3001)
 const alphaVantageApiKey = optional(process.env.ALPHA_VANTAGE_API_KEY)
 
 /**
@@ -76,11 +79,19 @@ function optional(value) {
 export const config = {
   port,
   finnhubApiKey,
-  /** GNews API Key. */
   gnewsApiKey,
   alphaVantageApiKey,
   googleClientId: optional(process.env.GOOGLE_CLIENT_ID),
   googleClientSecret: optional(process.env.GOOGLE_CLIENT_SECRET),
+
+  supabaseUrl: optional(process.env.SUPABASE_URL),
+  supabaseAnonKey: optional(process.env.SUPABASE_ANON_KEY),
+  supabaseServiceRoleKey: optional(process.env.SUPABASE_SERVICE_ROLE_KEY),
+
+  jwtSecret:
+  process.env.NODE_ENV === 'production'
+    ? requireSecret('JWT_SECRET', process.env.JWT_SECRET)
+    : optional(process.env.JWT_SECRET)
 }
 
 export default config

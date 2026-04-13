@@ -1,5 +1,6 @@
 import { config } from './src/config.js';
 import express from 'express';
+import WebSocket from "ws";
 import { WebSocketServer } from "ws";
 import newsRouter from './src/routes/newsRouter.js';
 import stockRouter from './src/routes/stockRouter.js';
@@ -28,7 +29,11 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3001'],
+    origin: [
+    'http://localhost:5173',
+    'http://localhost:3001',
+    'https://stockpulse.vercel.app'
+],
     credentials: true
 }));
 
