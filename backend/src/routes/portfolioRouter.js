@@ -62,8 +62,12 @@ router.get('/', requireAuth, async (req, res) => {
    ─────────────────────────────────────────────────────────────────────────── */
 router.get('/summary', requireAuth, async (req, res) => {
   try {
-    const sb = createUserSupabase(req.accessToken)
-    
+    const token =
+      req.accessToken ||
+      req.headers.authorization?.replace('Bearer ', '')
+
+    const sb = createUserSupabase(token)
+
     // Try to fetch user, create if not exists
     let { data: user, error: ue } = await sb.from('users')
       .select('balance')
@@ -145,7 +149,11 @@ router.get('/transactions', requireAuth, async (req, res) => {
     const offset = (page - 1) * limit
     const end    = offset + limit - 1
 
-    const sb = createUserSupabase(req.accessToken)
+    const token =
+      req.accessToken ||
+      req.headers.authorization?.replace('Bearer ', '')
+
+    const sb = createUserSupabase(token)
     const { data, error, count } = await sb
       .from('transactions')
       // Explicit column list — matches schema exactly; 'created_at' and 'price'
@@ -177,7 +185,11 @@ router.get('/transactions', requireAuth, async (req, res) => {
    ─────────────────────────────────────────────────────────────────────────── */
 router.post('/snapshot', requireAuth, async (req, res) => {
   try {
-    const sb = createUserSupabase(req.accessToken)
+    const token =
+      req.accessToken ||
+      req.headers.authorization?.replace('Bearer ', '')
+
+    const sb = createUserSupabase(token)
     const result = await takeSnapshot(req.user.id, sb, req.user.email)
 
     if (!result.success) {
@@ -197,7 +209,11 @@ router.post('/snapshot', requireAuth, async (req, res) => {
 router.get('/history', requireAuth, async (req, res) => {
   try {
     const { range } = req.query
-    const sb = createUserSupabase(req.accessToken)
+    const token =
+      req.accessToken ||
+      req.headers.authorization?.replace('Bearer ', '')
+
+    const sb = createUserSupabase(token)
 
     let query = sb
       .from('portfolio_snapshots')
