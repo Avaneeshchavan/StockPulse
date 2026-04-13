@@ -6,34 +6,51 @@ import { takeSnapshot } from '../services/portfolioService.js'
 const router = express.Router()
 
 /* ── GET /api/portfolio ─────────────────────────────────────────────────────
-   Returns the authenticated user's holdings.
-   Schema: holdings(id, user_id, symbol, quantity, avg_buy_price, updated_at)
-   Frontend expects: { success, data: [{ symbol, quantity, avg_buy_price, updated_at, ... }] }
+   Returns the authenticated user's holdings and cash balance.
+   Frontend expects: { holdings: [], cash: number }
    ─────────────────────────────────────────────────────────────────────────── */
 router.get('/', requireAuth, async (req, res) => {
   try {
     const sb = createUserSupabase(req.accessToken)
-    const { data, error } = await sb
+
+    // Fetch holdings
+    const { data: holdings, error: holdingsError } = await sb
       .from('holdings')
-      .select('id, user_id, symbol, quantity, avg_buy_price, updated_at')
+      .select('id, user_id, symbol, quantity, avg_buy_price, updated_at, company_name, asset_type')
       .eq('user_id', req.user.id)
       .order('symbol', { ascending: true })
 
-    if (error) {
-      console.error('Supabase Error:', error)
-      return res.status(400).json({ success: false, error: error.message })
+    if (holdingsError) {
+      console.error('Supabase Error:', holdingsError)
+      return res.status(400).json({ error: holdingsError.message })
+    }
+
+    // Fetch cash balance from profiles
+    const { data: profile, error: profileError } = await sb
+      .from('profiles')
+      .select('virtual_balance')
+      .eq('id', req.user.id)
+      .single()
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError)
     }
 
     // Map avg_buy_price to average_price for frontend compatibility
-    const mappedData = (data ?? []).map(h => ({
+    const mappedHoldings = (holdings ?? []).map(h => ({
       ...h,
-      average_price: h.avg_buy_price
+      average_price: h.avg_buy_price,
+      avg_buy_price: h.avg_buy_price,
+      created_at: h.updated_at
     }))
 
-    return res.json({ success: true, data: mappedData })
+    return res.json({
+      holdings: mappedHoldings,
+      cash: profile?.virtual_balance ?? 100000
+    })
   } catch (e) {
     console.error('[portfolioRouter GET /] Unexpected error:', e)
-    res.status(500).json({ success: false, error: e.message })
+    res.status(500).json({ error: e.message })
   }
 })
 
