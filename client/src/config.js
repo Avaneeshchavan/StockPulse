@@ -1,7 +1,9 @@
 /**
  * API origin for HTTP requests. Empty string = same origin (e.g. Vite dev proxy).
  */
-const rawBase = import.meta.env.VITE_API_BASE_URL ?? ''
+const rawBase =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://stockpulse-api-khds.onrender.com'
 export const API_BASE = String(rawBase).replace(/\/$/, '')
 
 export function apiUrl(path) {
