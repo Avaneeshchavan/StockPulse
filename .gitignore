@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Environment — never commit secrets
+.env
+.env.local
+.env.*.local
+backend/.env
+client/.env
+
+# Keep tracked templates
+!.env.example
+!**/.env.example
+
+# Build / OS
+dist/
+.DS_Store
+*.log
