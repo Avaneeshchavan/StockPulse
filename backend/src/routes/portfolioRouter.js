@@ -11,46 +11,41 @@ const router = express.Router()
    ─────────────────────────────────────────────────────────────────────────── */
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const sb = createUserSupabase(req.accessToken)
+    const sb = createUserSupabase(
+      req.accessToken ||
+      req.headers.authorization?.replace('Bearer ', '')
+    )
 
-    // Fetch holdings
-    const { data: holdings, error: holdingsError } = await sb
-      .from('holdings')
-      .select('id, user_id, symbol, quantity, avg_buy_price, updated_at, company_name, asset_type')
-      .eq('user_id', req.user.id)
-      .order('symbol', { ascending: true })
+    const { data: holdings, error } =
+      await sb
+        .from('holdings')
+        .select('*')
+        .eq('user_id', req.user.id)
 
-    if (holdingsError) {
-      console.error('Supabase Error:', holdingsError)
-      return res.status(400).json({ error: holdingsError.message })
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      })
     }
 
-    // Fetch cash balance from profiles
-    const { data: profile, error: profileError } = await sb
-      .from('profiles')
-      .select('virtual_balance')
-      .eq('id', req.user.id)
-      .single()
-
-    if (profileError) {
-      console.error('Profile fetch error:', profileError)
-    }
-
-    // Map avg_buy_price to average_price for frontend compatibility
-    const mappedHoldings = (holdings ?? []).map(h => ({
-      ...h,
-      average_price: h.avg_buy_price,
-      avg_buy_price: h.avg_buy_price,
-      created_at: h.updated_at
-    }))
+    const { data: profile } =
+      await sb
+        .from('profiles')
+        .select('virtual_balance')
+        .eq('id', req.user.id)
+        .single()
 
     return res.json({
-      holdings: mappedHoldings,
+      holdings: holdings ?? [],
       cash: profile?.virtual_balance ?? 100000
     })
-  } catch (e) {
-    console.error('[portfolioRouter GET /] Unexpected error:', e)
-    res.status(500).json({ error: e.message })
+  } catch (err) {
+    console.error('[GET /api/portfolio] error:', err)
+    return res.status(500).json({
+      success: false,
+      error: err.message
+    })
   }
 })
 
