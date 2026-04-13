@@ -11,10 +11,18 @@ const router = express.Router()
    ─────────────────────────────────────────────────────────────────────────── */
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const sb = createUserSupabase(
+    const token =
       req.accessToken ||
       req.headers.authorization?.replace('Bearer ', '')
-    )
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized"
+      })
+    }
+
+    const sb = createUserSupabase(token)
 
     const { data: holdings, error } =
       await sb
@@ -41,7 +49,7 @@ router.get('/', requireAuth, async (req, res) => {
       cash: profile?.virtual_balance ?? 100000
     })
   } catch (err) {
-    console.error('[GET /api/portfolio] error:', err)
+    console.error('[portfolio route error]', err)
     return res.status(500).json({
       success: false,
       error: err.message

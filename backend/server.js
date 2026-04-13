@@ -35,7 +35,7 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:3001',
     'https://stock-pulse-phi.vercel.app'
-],
+], 
     credentials: true
 }));
 
