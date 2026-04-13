@@ -60,7 +60,7 @@ app.get('/api/transactions', requireAuth, async (req, res) => {
     const sb = createUserSupabase(req.accessToken || req.headers.authorization?.replace('Bearer ', ''))
     const { data, error } = await sb
       .from('transactions')
-      .select('id, user_id, symbol, side, quantity, price, created_at, company_name, asset_type, type, total, notes')
+      .select('id, user_id, symbol, type, quantity, price, created_at, company_name, asset_type, total, notes')
       .eq('user_id', req.user.id)
       .order('created_at', { ascending: false })
 

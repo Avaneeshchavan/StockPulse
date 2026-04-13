@@ -68,39 +68,20 @@ router.get('/summary', requireAuth, async (req, res) => {
 
     const sb = createUserSupabase(token)
 
-    // Try to fetch user, create if not exists
-    let { data: user, error: ue } = await sb.from('users')
-      .select('balance')
+    // Fetch balance from profiles table (same source as the rest of the app)
+    const { data: profile, error: profileError } = await sb
+      .from('profiles')
+      .select('virtual_balance')
       .eq('id', req.user.id)
       .maybeSingle()
-    
-    // If user not found, create with default balance
-    if (!user && !ue) {
-      console.log(`[portfolioRouter] User ${req.user.id} not found, creating new user row...`)
-      const { data: newUser, error: insertError } = await sb
-        .from('users')
-        .insert({
-          id: req.user.id,
-          email: req.user.email,
-          balance: 100000
-        })
-        .select('balance')
-        .maybeSingle()
-      
-      if (insertError) {
-        console.error('[portfolioRouter] Error creating user row:', insertError)
-        return res.status(500).json({ success: false, error: insertError.message })
-      }
-      
-      console.log(`[portfolioRouter] Created new user row with $100,000 balance for ${req.user.id}`)
-      user = newUser
+
+    if (profileError) {
+      console.error('[portfolioRouter /summary] Profile error:', profileError)
+      return res.status(400).json({ success: false, error: profileError.message })
     }
-    
-    if (ue) {
-      console.error('Supabase Error:', ue)
-      return res.status(400).json({ success: false, error: ue.message })
-    }
-    
+
+    const balance = Number(profile?.virtual_balance ?? 100000)
+
     const { data: holdings, error: pe } = await sb
       .from('holdings')
       .select('id, user_id, symbol, quantity, avg_buy_price, updated_at')
@@ -126,7 +107,7 @@ router.get('/summary', requireAuth, async (req, res) => {
     return res.json({
       success: true,
       data: {
-        balance: Number(user?.balance ?? 0),
+        balance,
         portfolio: list,
         totalCostBasis: Math.round(totalCostBasis * 100) / 100,
       },
@@ -139,8 +120,7 @@ router.get('/summary', requireAuth, async (req, res) => {
 
 /* ── GET /api/portfolio/transactions ────────────────────────────────────────
    Returns paginated transaction history for the authenticated user.
-   Schema: transactions(id, user_id, symbol, side, quantity, price, created_at)
-   Frontend maps: side → type, created_at → created_at
+   Schema: transactions(id, user_id, symbol, type, quantity, price, created_at, ...)
    ─────────────────────────────────────────────────────────────────────────── */
 router.get('/transactions', requireAuth, async (req, res) => {
   try {
@@ -157,7 +137,7 @@ router.get('/transactions', requireAuth, async (req, res) => {
     const { data, error, count } = await sb
       .from('transactions')
       // Explicit column list — matches schema exactly; 'created_at' and 'price'
-      .select('id, user_id, symbol, side, quantity, price, created_at', { count: 'exact' })
+      .select('id, user_id, symbol, type, quantity, price, created_at, company_name, asset_type, total, notes', { count: 'exact' })
       .eq('user_id', req.user.id)
       .order('created_at', { ascending: false })
       .range(offset, end)

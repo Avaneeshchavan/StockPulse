@@ -25,10 +25,7 @@ export default function TransactionHistoryPage() {
         const json = await res.json().catch((err) => { console.error(err); return {} })
         if (!res.ok) throw new Error(json.error || res.statusText)
         if (!cancelled) {
-          const formatted = (json.data ?? []).map(t => ({
-            ...t,
-            type: t.side // backend uses 'side'
-          }))
+          const formatted = (json.data ?? [])
           setRows(formatted)
         }
       } catch (e) {

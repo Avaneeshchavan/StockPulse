@@ -1,11 +1,17 @@
 import { supabase } from '../lib/supabase.js'
-import { apiUrl } from '../config.js'
 
 /**
- * @param {string} path
+ * Fetch with Supabase auth token attached.
+ *
+ * IMPORTANT: `url` must be a fully-resolved URL (i.e. already run through
+ * apiUrl()). This function does NOT apply apiUrl() — callers are responsible
+ * for that.
+ *
+ * @param {string} url – Fully-resolved URL (from apiUrl())
  * @param {RequestInit} [options]
+ * @returns {Promise<Response>} – The raw fetch Response (callers decide how to handle errors)
  */
-export const fetchWithAuth = async (path, options = {}) => {
+export const fetchWithAuth = async (url, options = {}) => {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
   if (sessionError || !session) {
@@ -18,12 +24,5 @@ export const fetchWithAuth = async (path, options = {}) => {
     headers.set('Content-Type', 'application/json')
   }
 
-  const response = await fetch(apiUrl(path), { ...options, headers })
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: response.statusText }))
-    throw new Error(errorData.error || `HTTP ${response.status}`)
-  }
-
-  return response
+  return fetch(url, { ...options, headers })
 }

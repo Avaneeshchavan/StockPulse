@@ -162,7 +162,7 @@ function PerformanceChart({ livePortfolioValue }) {
       const qty = Number(tx.quantity) || 0
       const price = Number(tx.price) || 0
       const sym = tx.symbol
-      const isBuy = tx.side === 'buy' || tx.type === 'buy'
+      const isBuy = tx.type === 'buy'
 
       lastKnownPrices[sym] = price
 
@@ -676,7 +676,7 @@ function AnalyticsTab({ transactions, rows, loading }) {
       const priceAtTime = Number(t.price) || 0
       const txQty = Number(t.quantity) || 0
 
-      if (t.side === 'buy') {
+      if (t.type === 'buy') {
         symbolState[sym].history.push({ qty: txQty, price: priceAtTime, date: new Date(t.created_at) })
       } else {
         // Simple FIFO-ish hold time and P&L matching
@@ -745,7 +745,7 @@ function AnalyticsTab({ transactions, rows, loading }) {
         return tDate >= w.date && tDate < nextW
       })
       if (weekIdx !== -1) {
-        if (t.side === 'buy') weeks[weekIdx].buys++
+        if (t.type === 'buy') weeks[weekIdx].buys++
         else weeks[weekIdx].sells++
       }
     })
@@ -992,13 +992,7 @@ export default function PortfolioPage() {
       }
       const body = await res.json()
       if (body.success) {
-        // Map backend fields to frontend expected fields
-        const formattedData = body.data.map(t => ({
-          ...t,
-          type: t.side,               // backend uses 'side', frontend expects 'type'
-          created_at: t.created_at,   // backend uses 'created_at', frontend expects 'created_at' 
-          price: t.price,             // backend uses 'price', frontend expects 'price'
-        }))
+        const formattedData = body.data
         setTransactions(formattedData)
       } else {
         console.error('[fetchTransactions] Unexpected body:', body)
@@ -1321,7 +1315,7 @@ export default function PortfolioPage() {
               columns={[
                 { key: 'created_at', label: 'Date', render: (v) => new Date(v).toLocaleDateString() },
                 { key: 'symbol', label: 'Symbol', render: (v) => <strong>{v}</strong> },
-                { key: 'side', label: 'Type', render: (v) => <span style={{ textTransform: 'uppercase', color: v === 'buy' ? 'var(--tv-green)' : 'var(--tv-red)', fontWeight: 700, fontSize: 10 }}>{v}</span> },
+                { key: 'type', label: 'Type', render: (v) => <span style={{ textTransform: 'uppercase', color: v === 'buy' ? 'var(--tv-green)' : 'var(--tv-red)', fontWeight: 700, fontSize: 10 }}>{v}</span> },
                 { key: 'quantity', label: 'Shares', numeric: true },
                 { key: 'price', label: 'Price', numeric: true, render: (v) => fmtMoney(v) },
                 { key: 'notes', label: 'Note', render: (v) => <span style={{ fontSize: 11, color: 'var(--tv-text-muted)' }}>{v || '—'}</span> }
