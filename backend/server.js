@@ -12,6 +12,8 @@ import marketRouter from './src/routes/marketRouter.js';
 import leaderboardRouter from './src/routes/leaderboardRouter.js';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import { requireAuth } from './src/middleware/auth.js';
+import { createUserSupabase } from './src/lib/supabaseUser.js';
 
 // Global error handlers
 process.on('unhandledRejection', (reason, promise) => {
@@ -49,6 +51,30 @@ app.use('/api/trade', tradeRouter);
 app.use('/api/watchlist', watchlistRouter);
 app.use('/api/stock/', stockRouter);
 app.use('/api/stocks/', mulStockRouter);
+
+// ── GET /api/transactions ───────────────────────────────────────────────────
+// Returns all transactions for the authenticated user
+// ─────────────────────────────────────────────────────────────────────────────
+app.get('/api/transactions', requireAuth, async (req, res) => {
+  try {
+    const sb = createUserSupabase(req.accessToken || req.headers.authorization?.replace('Bearer ', ''))
+    const { data, error } = await sb
+      .from('transactions')
+      .select('id, user_id, symbol, side, quantity, price, created_at, company_name, asset_type, type, total, notes')
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('[GET /api/transactions] Supabase error:', error)
+      return res.status(400).json({ success: false, error: error.message })
+    }
+
+    return res.json({ success: true, data: data ?? [] })
+  } catch (e) {
+    console.error('[GET /api/transactions] Unexpected error:', e)
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
 
 // 404
 app.use((req, res) => {
